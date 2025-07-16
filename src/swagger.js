@@ -21,7 +21,7 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  apis: ['./src/routes/*.js', './src/controllers/*.js'], // rutas donde leer los comentarios
+  apis: ['./src/routes/*.js', './src/controllers/*.js'],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
