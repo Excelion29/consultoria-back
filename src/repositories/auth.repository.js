@@ -11,6 +11,17 @@ export async function findUserByEmail(email) {
   return rows[0];
 }
 
+export async function findUserByDNI(dni) {
+  const [rows] = await db.query(`
+    SELECT users.*, roles.name as role
+    FROM users
+    JOIN roles ON users.role_id = roles.id
+    WHERE users.dni = ? AND users.is_deleted = false
+  `, [dni]);
+
+  return rows[0];
+}
+
 export async function findUserById(id) {
   const [rows] = await db.query(`
     SELECT users.id, users.name, email, dni, role_id, roles.name as role
