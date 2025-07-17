@@ -19,7 +19,7 @@ class UserRepository {
     }
     return this;
   }
-  
+
   filterByDNI(dni) {
     if (dni) {
       this.queryConditions.push(`users.dni LIKE ?`);
@@ -76,28 +76,57 @@ class UserRepository {
 
   async saveUser(name, email, dni, password, roleId) {
     const [existing] = await db.query(`SELECT * FROM users WHERE email = ?`, [
-        email,
+      email,
     ]);
-    
+
     if (existing.length === 0) {
+      // Insertar nuevo usuario
       const [result] = await db.query(
         `
-              INSERT INTO users (name, email, dni, password, role_id, is_active, is_deleted)
-              VALUES (?, ?, ?, ?, ?, true, false)
-          `,
+      INSERT INTO users (name, email, dni, password, role_id, is_active, is_deleted)
+      VALUES (?, ?, ?, ?, ?, true, false)
+      `,
         [name, email, dni, password, roleId]
       );
-    
+
       const insertedId = result.insertId;
-    
+
       const [user] = await db.query(
         `SELECT id, name, email, dni, role_id FROM users WHERE id = ?`,
         [insertedId]
       );
-    
+
       return user[0];
     }
-    
+
+    const user = existing[0];
+
+    if (user.is_deleted) {
+      await db.query(
+        `
+      UPDATE users
+      SET 
+        name = ?, 
+        dni = ?, 
+        password = ?, 
+        role_id = ?, 
+        is_active = true, 
+        is_deleted = false,
+        deleted_at = NULL,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE email = ?
+      `,
+        [name, dni, password, roleId, email]
+      );
+
+      const [updatedUser] = await db.query(
+        `SELECT id, name, email, dni, role_id FROM users WHERE email = ?`,
+        [email]
+      );
+
+      return updatedUser[0];
+    }
+
     throw new Error("El usuario ya existe");
   }
 }

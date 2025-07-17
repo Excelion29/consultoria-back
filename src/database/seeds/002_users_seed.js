@@ -14,6 +14,13 @@ export default async function () {
       role: 'admin'
     },
     {
+      name: 'Administrador Secundario',
+      email: 'admin_2@example.com',
+      dni: '12345672',
+      password: await bcrypt.hash('12345672', 10),
+      role: 'admin'
+    },
+    {
       name: 'Dr. Juan Médico',
       email: 'medico@example.com',
       dni: '87654321',

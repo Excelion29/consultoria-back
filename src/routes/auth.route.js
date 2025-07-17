@@ -1,13 +1,13 @@
 import express from 'express';
-import { login, me, refreshToken, logout } from '../controllers/auth.controller.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
+import AuthController from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
-router.post('/login', login);
-router.get('/me', authMiddleware, me);
-router.post('/refresh-token', refreshToken);
-router.post('/logout', authMiddleware, logout);
+router.post('/login', AuthController.login);
+router.get('/me', authMiddleware, AuthController.me);
+router.post('/refresh-token', AuthController.refreshToken);
+router.post('/logout', authMiddleware, AuthController.logout);
 
 /**
  * @swagger

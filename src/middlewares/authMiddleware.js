@@ -1,5 +1,5 @@
 import { verifyToken } from '../utils/jwt.js';
-import { existsToken } from '../repositories/auth.repository.js';
+import AuthRepository from '../repositories/auth.repository.js';
 
 export async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -13,7 +13,7 @@ export async function authMiddleware(req, res, next) {
   try {
     const decoded = verifyToken(token);
 
-    const isValid = await existsToken(token);
+    const isValid = await AuthRepository.existsToken(token);
     if (!isValid) {
       return res.status(401).json({ message: 'Token inválido o revocado' });
     }

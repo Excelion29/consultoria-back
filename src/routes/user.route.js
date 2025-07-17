@@ -1,13 +1,13 @@
 import express from 'express';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { roleMiddleware } from '../middlewares/roleMiddleware.js';
-import { create, all } from '../controllers/user.controller.js';
+import UserController from '../controllers/user.controller.js';
 
 const router = express.Router();
 
-router.post('/create', authMiddleware, roleMiddleware(['admin']), create);
+router.post('/create', authMiddleware, roleMiddleware(['admin']), UserController.create);
 
-router.post('/all', authMiddleware, roleMiddleware(['admin']), all);
+router.post('/all', authMiddleware, roleMiddleware(['admin']), UserController.all);
 
 
 /**
