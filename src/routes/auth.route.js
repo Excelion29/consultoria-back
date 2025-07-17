@@ -1,13 +1,13 @@
-import express from 'express';
-import { authMiddleware } from '../middlewares/authMiddleware.js';
-import AuthController from '../controllers/auth.controller.js';
+import express from "express";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import AuthController from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
-router.post('/login', AuthController.login);
-router.get('/me', authMiddleware, AuthController.me);
-router.post('/refresh-token', AuthController.refreshToken);
-router.post('/logout', authMiddleware, AuthController.logout);
+router.post("/login", AuthController.login);
+router.get("/me", authMiddleware, AuthController.me);
+router.post("/refresh-token", AuthController.refreshToken);
+router.post("/logout", authMiddleware, AuthController.logout);
 
 /**
  * @swagger
@@ -22,7 +22,7 @@ router.post('/logout', authMiddleware, AuthController.logout);
  *   post:
  *     summary: Iniciar sesión
  *     tags: [Auth]
- *     description: Autenticación de usuario y generación de JWT.
+ *     description: Permite iniciar sesión con email o DNI, según el rol del usuario. Los administradores y médicos deben usar su email, mientras que los pacientes deben usar su DNI.
  *     requestBody:
  *       required: true
  *       content:
@@ -30,28 +30,67 @@ router.post('/logout', authMiddleware, AuthController.logout);
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - identifier
  *               - password
  *             properties:
- *               email:
+ *               identifier:
  *                 type: string
+ *                 description: Correo electrónico (admin/médico) o DNI (paciente)
  *                 example: admin@example.com
  *               password:
  *                 type: string
  *                 example: 12345678
  *     responses:
  *       200:
- *         description: Token JWT generado exitosamente.
+ *         description: Inicio de sesión exitoso. Retorna el token de acceso y refresh token.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 token:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5...
+ *                     refreshToken:
+ *                       type: string
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5...
+ *                     user:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         name:
+ *                           type: string
+ *                           example: Juan Pérez
+ *                         email:
+ *                           type: string
+ *                           example: admin@example.com
+ *                         dni:
+ *                           type: string
+ *                           example: 71234567
+ *                         role:
+ *                           type: string
+ *                           example: admin
+ *                 message:
  *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5...
- *       400:
- *         description: Credenciales inválidas.
+ *                   example: Inicio de sesión exitoso
+ *       401:
+ *         description: Credenciales inválidas o error de autenticación.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   nullable: true
+ *                   example: null
+ *                 message:
+ *                   type: string
+ *                   example: Credenciales inválidas
  */
 
 /**

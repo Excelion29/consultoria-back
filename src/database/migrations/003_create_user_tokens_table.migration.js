@@ -1,5 +1,5 @@
 export default {
-  name: '003_user_tokens_table',
+  name: '003_create_user_tokens_table',
   up: async (db) => {
     await db.query(`
       CREATE TABLE IF NOT EXISTS user_tokens (

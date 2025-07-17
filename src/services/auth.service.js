@@ -12,12 +12,27 @@ class AuthService {
     this.authRepository = AuthRepository;
   }
 
-  async login(email, password) {
-    const user = await this.authRepository.findUserByEmail(email);
-    if (!user) throw new Error("Usuario no encontrado");
+  async login(identifier, password) {
+    let user;
+
+    if (identifier.includes('@')) {
+      user = await this.authRepository.findUserByEmail(identifier);
+    } else {
+      user = await this.authRepository.findUserByDNI(identifier);
+    }
+
+    if (!user) throw new Error('Usuario no encontrado');
+
+    const isEmailLogin = identifier.includes('@');
+    if (isEmailLogin && user.role === 'paciente') {
+      throw new Error('El paciente debe iniciar sesión con su DNI');
+    }
+    if (!isEmailLogin && user.role !== 'paciente') {
+      throw new Error('Solo los pacientes pueden iniciar sesión con DNI');
+    }
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw new Error("Contraseña incorrecta");
+    if (!valid) throw new Error('Contraseña incorrecta');
 
     await this.authRepository.deleteUserTokens(user.id);
 

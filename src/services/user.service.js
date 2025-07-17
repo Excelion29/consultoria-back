@@ -10,10 +10,10 @@ class UserService {
   }
 
   async create(name, email, dni, roleId) {
-    const emailExist = await this.authRepository .findUserByEmail(email);
+    const emailExist = await this.authRepository.findUserByEmail(email);
     if (emailExist) throw new Error("Este correo ya está en uso");
 
-    const dniExist = await this.authRepository .findUserByDNI(dni);
+    const dniExist = await this.authRepository.findUserByDNI(dni);
     if (dniExist) throw new Error("Este dni ya está en uso");
 
     const password = await bcrypt.hash(dni, 10);

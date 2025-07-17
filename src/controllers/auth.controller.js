@@ -1,14 +1,14 @@
 import AuthService from '../services/auth.service.js';
 
 class AuthController {
-  
+
   authService = AuthService;
 
   login = async (req, res) => {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
     try {
-      const result = await this.authService.login(email, password);
+      const result = await this.authService.login(identifier, password);
 
       res.status(200).json({
         data: result,
