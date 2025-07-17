@@ -28,10 +28,14 @@ class UserRepository {
     return this;
   }
 
-  filterByRole(roleName) {
-    if (roleName) {
+  filterByRole(roleNameOrArray) {
+    if (Array.isArray(roleNameOrArray) && roleNameOrArray.length > 0) {
+      const placeholders = roleNameOrArray.map(() => "?").join(",");
+      this.queryConditions.push(`roles.name IN (${placeholders})`);
+      this.queryParams.push(...roleNameOrArray);
+    } else if (typeof roleNameOrArray === "string") {
       this.queryConditions.push(`roles.name LIKE ?`);
-      this.queryParams.push(`%${roleName}%`);
+      this.queryParams.push(`%${roleNameOrArray}%`);
     }
     return this;
   }
@@ -128,6 +132,44 @@ class UserRepository {
     }
 
     throw new Error("El usuario ya existe");
+  }
+
+  async attachSpecialtyToDoctor(doctorId, specialtyId) {
+    const [exists] = await db.query(
+      `
+      SELECT * FROM doctor_specialties WHERE doctor_id = ? AND specialty_id = ?
+    `,
+      [doctorId, specialtyId]
+    );
+
+    if (exists.length === 0) {
+      await db.query(
+        `
+        INSERT INTO doctor_specialties (doctor_id, specialty_id) VALUES (?, ?)
+      `,
+        [doctorId, specialtyId]
+      );
+    }
+  }
+
+  async saveAvailability(doctorId, weekday, start_time, end_time) {
+    const [exists] = await db.query(
+      `
+      SELECT * FROM doctor_availabilities 
+      WHERE doctor_id = ? AND weekday = ? AND start_time = ? AND end_time = ?
+    `,
+      [doctorId, weekday, start_time, end_time]
+    );
+
+    if (exists.length === 0) {
+      await db.query(
+        `
+        INSERT INTO doctor_availabilities (doctor_id, weekday, start_time, end_time)
+        VALUES (?, ?, ?, ?)
+      `,
+        [doctorId, weekday, start_time, end_time]
+      );
+    }
   }
 }
 
