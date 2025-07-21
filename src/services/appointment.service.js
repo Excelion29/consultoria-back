@@ -117,6 +117,8 @@ class AppointmentService {
 
     if (filters?.status) repo.filterByStatus(filters.status);
     if (filters?.doctorName) repo.filterByDoctorName(filters.doctorName);
+    if (filters?.doctorSpeciality)
+      repo.filterBySpecialty(filters.doctorSpeciality);
     if (filters?.date) repo.filterByDate(filters.date);
     else repo.filterByDate(getTodayDate());
     if (filters?.time) repo.filterByTime(filters.time);
@@ -195,7 +197,7 @@ class AppointmentService {
     }
 
     const doctorId = newDoctorId || appointment.doctor_id;
-    const weekday = new Date(newDate).getDay()+1;
+    const weekday = new Date(newDate).getDay() + 1;
 
     const exists = await this.appointmentRepository.checkDoctorExists(doctorId);
     if (!exists) throw new Error("El médico seleccionado no existe");
@@ -236,6 +238,33 @@ class AppointmentService {
       changedBy: adminId,
       status: "reprogramada",
       comment: `Reprogramada para el ${newDate} a las ${newTime} con doctor ID ${doctorId}`,
+    });
+
+    return { success: true };
+  }
+
+  async completeAppointment({ appointmentId, doctorId, diagnosis }) {
+    const appointment = await this.appointmentRepository.getAppointmentById(
+      appointmentId
+    );
+
+    if (!appointment) throw new Error("La cita no existe");
+    if (appointment.doctor_id !== doctorId)
+      throw new Error("No puedes completar una cita que no te pertenece");
+
+    if (appointment.status !== "confirmada")
+      throw new Error("Solo se pueden completar citas confirmadas");
+
+    await this.appointmentRepository.markAsCompleted({
+      appointmentId,
+      diagnosis,
+    });
+
+    await this.appointmentRepository.addHistory({
+      appointmentId,
+      changedBy: doctorId,
+      status: "completada",
+      comment: `Cita completada con diagnóstico: ${diagnosis}`,
     });
 
     return { success: true };

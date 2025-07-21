@@ -44,6 +44,14 @@ class AppointmentRepository {
     return this;
   }
 
+  filterBySpecialty(specialtyName) {
+    if (specialtyName) {
+      this.queryConditions.push(`s.name LIKE ?`);
+      this.queryParams.push(`%${specialtyName}%`);
+    }
+    return this;
+  }
+
   filterByUserRole(role, userId) {
     if (role === "medico") {
       this.queryConditions.push(`a.doctor_id = ?`);
@@ -64,16 +72,21 @@ class AppointmentRepository {
 
     const [appointments] = await db.query(
       `
-      SELECT a.id, a.appointment_date, a.appointment_time, a.status,
-             a.current_reason, a.current_diagnosis,
-             p.name AS patient_name, d.name AS doctor_name
-      FROM appointments a
-      JOIN users p ON a.patient_id = p.id
-      JOIN users d ON a.doctor_id = d.id
-      ${whereClause}
-      ORDER BY a.appointment_date DESC, a.appointment_time DESC
-      LIMIT ? OFFSET ?
-    `,
+        SELECT 
+          a.id, a.appointment_date, a.appointment_time, a.status,
+          a.current_reason, a.current_diagnosis,
+          p.name AS patient_name,
+          d.name AS doctor_name,
+          s.name AS specialty_name
+        FROM appointments a
+        JOIN users p ON a.patient_id = p.id
+        JOIN users d ON a.doctor_id = d.id
+        JOIN doctor_specialties ds ON ds.doctor_id = d.id
+        JOIN specialties s ON s.id = ds.specialty_id
+        ${whereClause}
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+        LIMIT ? OFFSET ?
+  `,
       [...this.queryParams, limit, offset]
     );
 
@@ -83,8 +96,10 @@ class AppointmentRepository {
       FROM appointments a
       JOIN users p ON a.patient_id = p.id
       JOIN users d ON a.doctor_id = d.id
+      JOIN doctor_specialties ds ON ds.doctor_id = d.id
+      JOIN specialties s ON s.id = ds.specialty_id
       ${whereClause}
-    `,
+  `,
       this.queryParams
     );
 
@@ -135,13 +150,24 @@ class AppointmentRepository {
     );
   }
 
-  async updateAppointmentStatus(appointmentId, status,reason) {
+  async updateAppointmentStatus(appointmentId, status, reason) {
     await db.query(
       `UPDATE appointments
       SET status = ?,
         current_reason = ?
       WHERE id = ? AND is_deleted = false`,
-      [status,reason, appointmentId]
+      [status, reason, appointmentId]
+    );
+  }
+
+  async markAsCompleted({ appointmentId, diagnosis }) {
+    await db.query(
+      `
+    UPDATE appointments
+    SET status = 'completada', current_diagnosis = ?
+    WHERE id = ?
+  `,
+      [diagnosis, appointmentId]
     );
   }
 
@@ -162,7 +188,6 @@ class AppointmentRepository {
   }
 
   async checkDoctorAvailability(doctorId, weekday, time) {
-
     const [rows] = await db.query(
       `SELECT * FROM doctor_availabilities
        WHERE doctor_id = ? AND weekday = ?
@@ -170,7 +195,7 @@ class AppointmentRepository {
        AND is_deleted = false`,
       [doctorId, weekday, time, time]
     );
-    
+
     return rows.length > 0;
   }
 

@@ -27,7 +27,7 @@ class AppointmentController {
       const { id } = req.params;
       const { new_date, new_time, reason, new_doctor_id } = req.body;
 
-      const result = await AppointmentService.rescheduleAppointment({
+      const result = await this.appointmentService.rescheduleAppointment({
         appointmentId: parseInt(id),
         newDate: new_date,
         newTime: new_time,
@@ -47,7 +47,7 @@ class AppointmentController {
     try {
       const { page = 1, limit = 10 } = req.query;
       const filters = req.body.filters || {};
-      const result = await AppointmentService.getUserAppointments({
+      const result = await this.appointmentService.getUserAppointments({
         userId: req.user.id,
         role: req.user.role,
         ...filters,
@@ -64,7 +64,7 @@ class AppointmentController {
   getAppointmentDetail = async (req, res) => {
     try {
       const { id } = req.params;
-      const appointment = await AppointmentService.getAppointmentDetail(
+      const appointment = await this.appointmentService.getAppointmentDetail(
         parseInt(id),
         req.user.id,
         req.user.role
@@ -83,7 +83,7 @@ class AppointmentController {
       const { id } = req.params;
       const { comment } = req.body;
 
-      const result = await AppointmentService.cancelAppointment({
+      const result = await this.appointmentService.cancelAppointment({
         appointmentId: parseInt(id),
         userId: req.user.id,
         role: req.user.role,
@@ -93,6 +93,26 @@ class AppointmentController {
       res
         .status(200)
         .json({ data: result, message: "Cita cancelada correctamente" });
+    } catch (error) {
+      res.status(400).json({ data: null, message: error.message });
+    }
+  };
+
+  completeAppointment = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { diagnosis } = req.body;
+
+      const result = await this.appointmentService.completeAppointment({
+        appointmentId: parseInt(id),
+        doctorId: req.user.id,
+        diagnosis,
+      });
+
+      res.status(200).json({
+        data: result,
+        message: "Cita marcada como completada",
+      });
     } catch (error) {
       res.status(400).json({ data: null, message: error.message });
     }

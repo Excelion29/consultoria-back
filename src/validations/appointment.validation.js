@@ -41,6 +41,11 @@ export const listAppointmentsValidation = [
     .isString()
     .withMessage("El nombre del doctor debe ser un texto"),
 
+  body("filters.doctorSpeciality")
+    .optional()
+    .isString()
+    .withMessage("El nombre de la especialidad debe ser un texto"),
+
   body("filters.date")
     .optional()
     .matches(dateRegex)
@@ -88,4 +93,8 @@ export const rescheduleAppointmentValidation = [
     .optional()
     .isString()
     .withMessage("El motivo debe ser un texto válido"),
+];
+
+export const completeAppointmentValidation = [
+  body("diagnosis").isString().notEmpty().withMessage("El diagnóstico es requerido"),
 ];

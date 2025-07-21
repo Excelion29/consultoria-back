@@ -3,7 +3,7 @@ import AppointmentController from "../controllers/appointment.controller.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { validationHandler } from "../middlewares/validationHandler.js";
-import { createAppointmentValidation, listAppointmentsValidation, rescheduleAppointmentValidation } from "../validations/appointment.validation.js";
+import { completeAppointmentValidation, createAppointmentValidation, listAppointmentsValidation, rescheduleAppointmentValidation } from "../validations/appointment.validation.js";
 
 const router = express.Router();
 
@@ -44,6 +44,15 @@ router.patch(
   validationHandler,
   roleMiddleware(["admin"]),
   AppointmentController.rescheduleAppointment
+);
+
+router.patch(
+  "/complete/:id",
+  authMiddleware,
+  completeAppointmentValidation,
+  roleMiddleware(["medico"]),
+  validationHandler,
+  AppointmentController.completeAppointment
 );
 
 /**
@@ -341,6 +350,49 @@ router.patch(
  *         description: Cita reprogramada correctamente
  *       400:
  *         description: Error de validación o conflicto
+ */
+/**
+ * @swagger
+ * /api/appointment/complete/{id}:
+ *   patch:
+ *     summary: Marcar una cita como completada (solo médicos)
+ *     tags: [Citas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la cita a completar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - diagnosis
+ *             properties:
+ *               diagnosis:
+ *                 type: string
+ *                 example: Migraña leve, se prescribe reposo y analgésico
+ *     responses:
+ *       200:
+ *         description: Cita completada correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                 message:
+ *                   type: string
+ *                   example: Cita marcada como completada
+ *       400:
+ *         description: Error de validación o conflicto de estado
  */
 
 export default router;
