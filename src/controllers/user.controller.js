@@ -138,5 +138,76 @@ class UserController {
       });
     }
   };
+
+  getById = async (req, res) => {
+    const { id } = req.params;
+    const requesterId = req.user.id;
+    const requesterRole = req.user.role;
+
+    try {
+      if (requesterId !== parseInt(id) && requesterRole !== "admin") {
+        return res.status(403).json({
+          data: null,
+          message: "No autorizado para ver este usuario",
+        });
+      }
+
+      const user = await this.userService.getById(id);
+      if (!user) {
+        return res.status(404).json({
+          data: null,
+          message: "Usuario no encontrado",
+        });
+      }
+
+      res.status(200).json({
+        data: user,
+        message: "Usuario obtenido correctamente",
+      });
+    } catch (err) {
+      res.status(500).json({
+        data: null,
+        message: "Error al obtener usuario",
+      });
+    }
+  };
+
+  updateUser = async (req, res) => {
+    const { id } = req.params;
+    const data = req.body;
+    const editorId = req.user.id;
+    const editorRole = req.user.role;
+
+    try {
+      const result = await this.userService.updateUser(
+        editorId,
+        editorRole,
+        id,
+        data
+      );
+      res
+        .status(200)
+        .json({ data: result, message: "Usuario actualizado correctamente" });
+    } catch (err) {
+      res.status(403).json({ data: null, message: err.message });
+    }
+  };
+
+  deleteUser = async (req, res) => {
+    try {
+      const targetUserId = parseInt(req.params.id);
+
+      const result = await this.userService.deleteUser(
+        targetUserId
+      );
+
+      return res.json({
+        message: "Usuario dado de baja correctamente",
+        data: result,
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
 }
 export default new UserController();

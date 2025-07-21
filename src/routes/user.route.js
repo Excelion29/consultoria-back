@@ -2,45 +2,88 @@ import express from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import UserController from "../controllers/user.controller.js";
+import { validationHandler } from '../middlewares/validationHandler.js';
+import { updateUserValidation, createAdminValidation, createDoctorValidation, createPatientValidation, paginatedListValidation } from '../validations/user.validation.js';
+import { validateAvailabilityRange } from "../validations/range-date-tima.validation.js";
 
 const router = express.Router();
 
 router.post(
-  "/create-admin",
+  '/create-admin',
   authMiddleware,
-  roleMiddleware(["admin"]),
+  roleMiddleware(['admin']),
+  createAdminValidation,
+  validationHandler,
   UserController.createAdmin
 );
+
 router.post(
-  "/create-patients",
+  '/create-patients',
   authMiddleware,
-  roleMiddleware(["admin"]),
+  roleMiddleware(['admin']),
+  createPatientValidation,
+  validationHandler,
   UserController.createPatient
 );
+
 router.post(
-  "/create-doctors",
+  '/create-doctors',
   authMiddleware,
-  roleMiddleware(["admin"]),
+  roleMiddleware(['admin']),
+  createDoctorValidation,
+  validationHandler,
   UserController.createDoctor
 );
 
 router.post(
-  "/all",
+  '/all',
   authMiddleware,
-  roleMiddleware(["admin"]),
+  roleMiddleware(['admin']),
+  paginatedListValidation,
+  validationHandler,
   UserController.all
 );
+
 router.post(
-  "/staff",
+  '/staff',
   authMiddleware,
-  roleMiddleware(["admin"]),
+  roleMiddleware(['admin']),
+  paginatedListValidation,
+  validationHandler,
   UserController.listStaff
 );
+
 router.post(
-  "/patients",
+  '/patients',
   authMiddleware,
-  roleMiddleware(["admin"]),
+  roleMiddleware(['admin']),
+  paginatedListValidation,
+  validationHandler,
   UserController.listPatients
+);
+
+router.get(
+  '/userById/:id',
+  authMiddleware,
+  roleMiddleware(['admin']),
+  validationHandler,
+  UserController.getById
+);
+
+router.put(
+  '/update/:id',
+  authMiddleware,
+  updateUserValidation,
+  validateAvailabilityRange,
+  validationHandler,
+  UserController.updateUser
+);
+
+router.delete(
+  '/delete/:id',
+  authMiddleware,
+  roleMiddleware(['admin']),
+  UserController.deleteUser
 );
 
 /**
@@ -460,6 +503,182 @@ router.post(
  *                 message:
  *                   type: string
  *                   example: Error al obtener pacientes
+ */
+
+/**
+ * @swagger
+ * /api/users/userById/{id}:
+ *   get:
+ *     summary: Obtener datos de un usuario por ID
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario a consultar
+ *     responses:
+ *       200:
+ *         description: Usuario obtenido correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   example:
+ *                     id: 5
+ *                     name: Dr. Juan
+ *                     email: juan@example.com
+ *                     dni: 12345678
+ *                     role: medico
+ *                     specialties:
+ *                       - id: 1
+ *                         name: Cardiología
+ *                     availability:
+ *                       - weekday: 1
+ *                         start_time: "08:00:00"
+ *                         end_time: "12:00:00"
+ *                 message:
+ *                   type: string
+ *                   example: Usuario obtenido correctamente
+ *       403:
+ *         description: No autorizado
+ *       404:
+ *         description: Usuario no encontrado
+ */
+/**
+ * @swagger
+ * /api/users/update/{id}:
+ *   put:
+ *     summary: Actualizar un usuario por su ID (solo admins)
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: María Editada
+ *               email:
+ *                 type: string
+ *                 example: maria.nueva@example.com
+ *               specialties:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 example: [1, 3]
+ *               availability:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     weekday:
+ *                       type: integer
+ *                       minimum: 0
+ *                       maximum: 6
+ *                       example: 1
+ *                     start_time:
+ *                       type: string
+ *                       format: time
+ *                       example: "09:00"
+ *                     end_time:
+ *                       type: string
+ *                       format: time
+ *                       example: "13:00"
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   example:
+ *                     id: 5
+ *                     name: María Editada
+ *                     email: maria.nueva@example.com
+ *                     dni: 87654321
+ *                     role: medico
+ *                     specialties:
+ *                       - id: 1
+ *                         name: Cardiología
+ *                     availability:
+ *                       - weekday: 1
+ *                         start_time: "09:00:00"
+ *                         end_time: "13:00:00"
+ *                 message:
+ *                   type: string
+ *                   example: Usuario actualizado correctamente
+ *       400:
+ *         description: Datos inválidos
+ *       401:
+ *         description: No autorizado
+ *       404:
+ *         description: Usuario no encontrado
+ */
+/**
+ * @swagger
+ * /api/users/delete/{id}:
+ *   delete:
+ *     summary: Dar de baja (borrado lógico) a un usuario
+ *     tags: [Usuarios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID del usuario a dar de baja
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Usuario dado de baja correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Usuario dado de baja correctamente
+ *                 data:
+ *                   type: object
+ *                   example:
+ *                     success: true
+ *       400:
+ *         description: Error en la solicitud
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Usuario no encontrado
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Acceso denegado para el rol actual
  */
 
 export default router;

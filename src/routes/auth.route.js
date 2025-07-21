@@ -1,12 +1,14 @@
 import express from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import AuthController from "../controllers/auth.controller.js";
+import { loginValidation, refreshTokenValidation } from '../validations/auth.validation.js';
+import { validationHandler } from '../middlewares/validationHandler.js';
 
 const router = express.Router();
 
-router.post("/login", AuthController.login);
+router.post("/login",loginValidation,validationHandler, AuthController.login);
 router.get("/me", authMiddleware, AuthController.me);
-router.post("/refresh-token", AuthController.refreshToken);
+router.post("/refresh-token",refreshTokenValidation, validationHandler, AuthController.refreshToken);
 router.post("/logout", authMiddleware, AuthController.logout);
 
 /**
