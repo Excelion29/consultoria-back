@@ -3,7 +3,7 @@ import AppointmentController from "../controllers/appointment.controller.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { validationHandler } from "../middlewares/validationHandler.js";
-import { createAppointmentValidation, listAppointmentsValidation } from "../validations/appointment.validation.js";
+import { createAppointmentValidation, listAppointmentsValidation, rescheduleAppointmentValidation } from "../validations/appointment.validation.js";
 
 const router = express.Router();
 
@@ -25,10 +25,27 @@ router.post(
 );
 
 router.get(
-  "/:id",
+  "/getByID/:id",
   authMiddleware,
   AppointmentController.getAppointmentDetail
 );
+
+router.patch(
+  "/cancel/:id",
+  authMiddleware,
+  roleMiddleware(["admin", "medico"]),
+  AppointmentController.cancelAppointment
+);
+
+router.patch(
+  "/reschedule/:id",
+  authMiddleware,
+  rescheduleAppointmentValidation,
+  validationHandler,
+  roleMiddleware(["admin"]),
+  AppointmentController.rescheduleAppointment
+);
+
 /**
  * @swagger
  * tags:
@@ -224,7 +241,7 @@ router.get(
 
 /**
  * @swagger
- * /api/appointment/{id}:
+ * /api/appointment/getByID/{id}:
  *   get:
  *     summary: Obtener detalle de una cita médica
  *     tags: [Citas]
@@ -251,6 +268,79 @@ router.get(
  *                   type: string
  *       400:
  *         description: Error o acceso no autorizado
+ */
+/**
+ * @swagger
+ * /api/appointment/cancel/{id}:
+ *   patch:
+ *     summary: Cancelar una cita (admin o médico)
+ *     tags: [Citas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la cita a cancelar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               comment:
+ *                 type: string
+ *                 example: El paciente no asistió
+ *     responses:
+ *       200:
+ *         description: Cita cancelada correctamente
+ *       400:
+ *         description: Error de validación o permisos
+ */
+/**
+ * @swagger
+ * /api/appointment/reschedule/{id}:
+ *   patch:
+ *     summary: Reprogramar una cita (solo admin)
+ *     tags: [Citas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la cita a reprogramar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - new_date
+ *               - new_time
+ *             properties:
+ *               new_date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-07-30"
+ *               new_time:
+ *                 type: string
+ *                 pattern: "^([01]\\d|2[0-3]):([0-5]\\d)$"
+ *                 example: "15:00"
+ *               reason:
+ *                 type: string
+ *                 example: Reprogramada por solicitud del paciente
+ *     responses:
+ *       200:
+ *         description: Cita reprogramada correctamente
+ *       400:
+ *         description: Error de validación o conflicto
  */
 
 export default router;

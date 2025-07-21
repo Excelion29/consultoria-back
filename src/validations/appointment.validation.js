@@ -1,4 +1,4 @@
-import { check, body } from "express-validator";
+import { check, param , body } from "express-validator";
 import { timeRegex, dateRegex } from "../utils/regex.js";
 
 export const createAppointmentValidation = [
@@ -60,4 +60,32 @@ export const listAppointmentsValidation = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("El límite debe ser un entero positivo"),
+];
+
+export const rescheduleAppointmentValidation = [
+  param("id")
+    .isInt()
+    .withMessage("El ID de la cita debe ser un número entero"),
+
+  check("new_date")
+    .notEmpty()
+    .withMessage("La nueva fecha es obligatoria")
+    .matches(dateRegex)
+    .withMessage("Fecha inválida. Formato requerido: YYYY-MM-DD"),
+
+  check("new_time")
+    .notEmpty()
+    .withMessage("La nueva hora es obligatoria")
+    .matches(timeRegex)
+    .withMessage("Hora inválida. Formato requerido: HH:mm"),
+
+  check("new_doctor_id")
+    .optional()
+    .isInt()
+    .withMessage("El nuevo ID del médico debe ser numérico"),
+
+  check("reason")
+    .optional()
+    .isString()
+    .withMessage("El motivo debe ser un texto válido"),
 ];

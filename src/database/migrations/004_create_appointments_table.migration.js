@@ -9,7 +9,7 @@ export default {
         doctor_id INT NOT NULL,
         appointment_date DATE NOT NULL,
         appointment_time TIME NOT NULL,
-        status ENUM('pendiente', 'confirmada', 'cancelada', 'completada') DEFAULT 'pendiente',
+        status ENUM('pendiente', 'confirmada', 'reprogramada', 'cancelada', 'completada') DEFAULT 'pendiente',
         current_reason TEXT,
         current_diagnosis TEXT,
         is_deleted BOOLEAN DEFAULT FALSE,

@@ -113,6 +113,38 @@ class AppointmentRepository {
     return result.insertId;
   }
 
+  async rescheduleAppointment({
+    appointmentId,
+    newDate,
+    newTime,
+    reason,
+    newDoctorId,
+  }) {
+    await db.query(
+      `
+      UPDATE appointments
+      SET 
+        appointment_date = ?, 
+        appointment_time = ?, 
+        current_reason = ?, 
+        doctor_id = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND is_deleted = false
+      `,
+      [newDate, newTime, reason, newDoctorId, appointmentId]
+    );
+  }
+
+  async updateAppointmentStatus(appointmentId, status,reason) {
+    await db.query(
+      `UPDATE appointments
+      SET status = ?,
+        current_reason = ?
+      WHERE id = ? AND is_deleted = false`,
+      [status,reason, appointmentId]
+    );
+  }
+
   async addHistory({ appointmentId, changedBy, status, comment }) {
     await db.query(
       `INSERT INTO appointment_history (appointment_id, changed_by, status, comment)
@@ -130,6 +162,7 @@ class AppointmentRepository {
   }
 
   async checkDoctorAvailability(doctorId, weekday, time) {
+
     const [rows] = await db.query(
       `SELECT * FROM doctor_availabilities
        WHERE doctor_id = ? AND weekday = ?
@@ -137,7 +170,7 @@ class AppointmentRepository {
        AND is_deleted = false`,
       [doctorId, weekday, time, time]
     );
-
+    
     return rows.length > 0;
   }
 

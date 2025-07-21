@@ -125,7 +125,7 @@ class AppointmentService {
 
     return await repo.getPaginatedResults(page, limit);
   }
-  
+
   async getAppointmentDetail(appointmentId, userId, role) {
     const appointment = await this.appointmentRepository.getAppointmentById(
       appointmentId
@@ -139,6 +139,106 @@ class AppointmentService {
       throw new Error("No tienes acceso a esta cita");
 
     return appointment;
+  }
+
+  async cancelAppointment({ appointmentId, userId, role, comment }) {
+    const appointment = await this.appointmentRepository.getAppointmentById(
+      appointmentId
+    );
+    if (!appointment) throw new Error("La cita no existe");
+
+    if (appointment.status === "cancelada")
+      throw new Error("La cita ya fue cancelada");
+
+    if (appointment.status === "completada")
+      throw new Error("No se puede cancelar una cita completada");
+
+    if (role === "medico" && appointment.doctor_id !== userId)
+      throw new Error("No puedes cancelar una cita que no te pertenece");
+
+    if (!["admin", "medico"].includes(role))
+      throw new Error("No tienes permiso para cancelar citas");
+
+    await this.appointmentRepository.updateAppointmentStatus(
+      appointmentId,
+      "cancelada",
+      comment
+    );
+
+    await this.appointmentRepository.addHistory({
+      appointmentId,
+      changedBy: userId,
+      status: "cancelada",
+      comment,
+    });
+
+    return { success: true };
+  }
+
+  async rescheduleAppointment({
+    appointmentId,
+    newDate,
+    newTime,
+    newDoctorId,
+    reason,
+    adminId,
+  }) {
+    const appointment = await this.appointmentRepository.getAppointmentById(
+      appointmentId
+    );
+    if (!appointment) throw new Error("La cita no existe");
+
+    if (["cancelada", "completada"].includes(appointment.status)) {
+      throw new Error(
+        "No se puede reprogramar una cita completada o cancelada"
+      );
+    }
+
+    const doctorId = newDoctorId || appointment.doctor_id;
+    const weekday = new Date(newDate).getDay()+1;
+
+    const exists = await this.appointmentRepository.checkDoctorExists(doctorId);
+    if (!exists) throw new Error("El médico seleccionado no existe");
+
+    const isAvailable =
+      await this.appointmentRepository.checkDoctorAvailability(
+        doctorId,
+        weekday,
+        newTime
+      );
+    if (!isAvailable)
+      throw new Error(
+        "La hora seleccionada no está dentro de la disponibilidad del médico"
+      );
+
+    const endTime = addMinutesToTimeString(newTime, 30);
+
+    const conflict =
+      await this.appointmentRepository.checkOverlappingWithDuration(
+        doctorId,
+        newDate,
+        newTime,
+        endTime
+      );
+    if (conflict)
+      throw new Error("El médico ya tiene una cita en ese rango de tiempo");
+
+    await this.appointmentRepository.rescheduleAppointment({
+      appointmentId,
+      newDate,
+      newTime,
+      reason,
+      newDoctorId: doctorId,
+    });
+
+    await this.appointmentRepository.addHistory({
+      appointmentId,
+      changedBy: adminId,
+      status: "reprogramada",
+      comment: `Reprogramada para el ${newDate} a las ${newTime} con doctor ID ${doctorId}`,
+    });
+
+    return { success: true };
   }
 }
 

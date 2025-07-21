@@ -6,7 +6,7 @@ export default {
         id INT AUTO_INCREMENT PRIMARY KEY,
         appointment_id INT NOT NULL,
         changed_by INT NOT NULL,
-        status ENUM('pendiente', 'confirmada', 'cancelada', 'completada') NOT NULL,
+        status ENUM('pendiente', 'confirmada', 'reprogramada', 'cancelada', 'completada') NOT NULL,
         comment TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (appointment_id) REFERENCES appointments(id),
