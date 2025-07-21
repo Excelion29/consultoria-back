@@ -8,6 +8,7 @@ import {
 import AuthRepository from "../repositories/auth.repository.js";
 
 class AuthService {
+  
   constructor() {
     this.authRepository = AuthRepository;
   }
